@@ -14,17 +14,17 @@ defmodule Markdown do
   def parse(m) do
     m
     |> String.split("\n")
-    |> Enum.map(fn t -> process(t) end)
+    |> Enum.map(&process/1)
     |> Enum.join()
-    |> patch
+    |> combine
   end
 
+  defp process(t = "#" <> _), do: enclose_with_header_tag(parse_header_md_level(t))
+
+  defp process(t = "*" <> _), do: parse_list_md_level(t)
+
   defp process(t) do
-    cond do
-      String.starts_with?(t, "#") -> enclose_with_header_tag(parse_header_md_level(t))
-      String.starts_with?(t, "*") -> parse_list_md_level(t)
-      true -> enclose_with_paragraph_tag(String.split(t))
-    end
+    enclose_with_paragraph_tag(String.split(t))
   end
 
   defp parse_header_md_level(hwt) do
@@ -39,11 +39,11 @@ defmodule Markdown do
       |> String.split()
       |> join_words_with_tags
 
-    "<li>" <> text <> "</li>"
+    "<li>#{text}</li>"
   end
 
   defp enclose_with_header_tag({hl, htl}) do
-    "<h" <> hl <> ">" <> htl <> "</h" <> hl <> ">"
+    "<h#{hl}>#{htl}</h#{hl}>"
   end
 
   defp enclose_with_paragraph_tag(t) do
@@ -78,7 +78,7 @@ defmodule Markdown do
     end
   end
 
-  defp patch(l) do
+  defp combine(l) do
     l
     |> replace("<li>", "<ul>" <> "<li>")
     |> String.replace_suffix("</li>", "</li>" <> "</ul>")
